@@ -10,7 +10,7 @@ import (
 type board [][]cell
 
 type cell struct {
-	x, y, value int
+	x, y, box, value int
 }
 
 func (b board) String() string {
@@ -37,10 +37,28 @@ func genBoard(p string) board {
 	spl := strings.Split(p, "")
 
 	count := 0
+	boxID := 1
 	for i := 0; i < 9; i++ {
+		boxRowCounter := 1
+		// Determine starting box ID based off how far into the row (i) loop we are
+		switch {
+		case i < 3:
+			boxID = 1
+		case i >= 3 && i <= 5:
+			boxID = 4
+		case i > 5:
+			boxID = 7
+		}
 		for j := 0; j < 9; j++ {
 			b[i][j].x = i
 			b[i][j].y = j
+			if boxRowCounter == 4 {
+				boxRowCounter = 1
+				boxID++
+			}
+			b[i][j].box = boxID
+			boxRowCounter++
+			// Already at 0 since cell is an []int array, can continue
 			if spl[count] == "." {
 				count++
 				continue
@@ -71,6 +89,8 @@ func chkLine(x []int) bool {
 	box1 := [][]int{[]int{0, 0}, []int{0, 1}, []int{0, 2}, []int{1, 0}, []int{1, 1}, []int{1, 2}, []int{2, 0}, []int{2, 1}, []int{2, 2}}
 
 	//[0][0], [0][1], [0][2], [1][0], [1][1], [1][2], [2][0], [2][1], [2][2] = box 1
+	//[0][3], [0][4], [0][5], [1][3], [1][4], [1][5], [2][3], [2][4], [2][5] = box 2
+	//[3][3], [3][4], [3][5], [4][3], [4][4], [4][5], [5][3], [5][4], [5][5] = box 5
 
 
 	return true
@@ -112,18 +132,25 @@ func removeZeroes(intSlice []int) []int {
 
 func validateBoard(x, y int, b *board) bool {
 	// TODO - These can be concurrent
+	fmt.Println("***Generating Row Filter***")
 	genRow := lineFilter(b, func(val cell) bool {
 		return val.x == x
 	})
 	row := chkLine(genRow)
 
+	fmt.Println("***Generating Column Filter***")
 	genCol := lineFilter(b, func(val cell) bool {
 		return val.y == y
 	})
 	col := chkLine(genCol)
 
-	//box := chkBox(x, y, b)
-	return row && col
+	fmt.Println("***Generating Box Filter***")
+	genBox := lineFilter(b, func(val cell) bool {
+		return val.box == (*b)[x][y].box
+	})
+	box := chkLine(genBox)
+
+	return row && col && box
 }
 
 /*func solve(b *board) {
@@ -140,6 +167,7 @@ func lineFilter(b *board, f func(cell) bool) []int {
 	for i := range *b {
 		for j := range (*b)[i] {
 			if f((*b)[i][j]) {
+				fmt.Println(fmt.Sprintf("Adding %v to the lineFilter", (*b)[i][j]))
 				line = append(line, (*b)[i][j].value)
 			}
 		}
