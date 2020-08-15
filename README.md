@@ -1,0 +1,1 @@
+Puzzles from https://qqwing.com/generate.html
