@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type board [][]cell
@@ -52,6 +54,7 @@ func genBoard(p string) board {
 		for j := 0; j < 9; j++ {
 			b[i][j].x = i
 			b[i][j].y = j
+			// Same boxID 3 times, then increment the ID for the next box
 			if boxRowCounter == 4 {
 				boxRowCounter = 1
 				boxID++
@@ -81,31 +84,6 @@ func chkLine(x []int) bool {
 	return len(uniq) == len(row)
 }
 
-/*func chkBox(x, y int, b *board) bool {
-	// Generate an []int to pass to chkLine based on the 3x3 square x and y are in
-	val := [][]int{[]int{x, y}}
-	box := []int{}
-
-	box1 := [][]int{[]int{0, 0}, []int{0, 1}, []int{0, 2}, []int{1, 0}, []int{1, 1}, []int{1, 2}, []int{2, 0}, []int{2, 1}, []int{2, 2}}
-
-	//[0][0], [0][1], [0][2], [1][0], [1][1], [1][2], [2][0], [2][1], [2][2] = box 1
-	//[0][3], [0][4], [0][5], [1][3], [1][4], [1][5], [2][3], [2][4], [2][5] = box 2
-	//[3][3], [3][4], [3][5], [4][3], [4][4], [4][5], [5][3], [5][4], [5][5] = box 5
-
-
-	return true
-} /*
-
-// From https://stackoverflow.com/a/10485970
-/*func contains(s [][]int, e []int) bool {
-	for i, j := range s {
-		if s[i] == e {
-			return true
-		}
-	}
-	return false
-}*/
-
 // From https://www.golangprograms.com/remove-duplicate-values-from-slice.html
 // Takes a slice and returns only unique values
 func unique(intSlice []int) []int {
@@ -132,19 +110,19 @@ func removeZeroes(intSlice []int) []int {
 
 func validateBoard(x, y int, b *board) bool {
 	// TODO - These can be concurrent
-	fmt.Println("***Generating Row Filter***")
+	//fmt.Println("***Generating Row Filter***")
 	genRow := lineFilter(b, func(val cell) bool {
 		return val.x == x
 	})
 	row := chkLine(genRow)
 
-	fmt.Println("***Generating Column Filter***")
+	//fmt.Println("***Generating Column Filter***")
 	genCol := lineFilter(b, func(val cell) bool {
 		return val.y == y
 	})
 	col := chkLine(genCol)
 
-	fmt.Println("***Generating Box Filter***")
+	//fmt.Println("***Generating Box Filter***")
 	genBox := lineFilter(b, func(val cell) bool {
 		return val.box == (*b)[x][y].box
 	})
@@ -153,21 +131,60 @@ func validateBoard(x, y int, b *board) bool {
 	return row && col && box
 }
 
-/*func solve(b *board) {
-	var curRow, curCol int = 0, 0
-	for {
-		(*b)[curRow][curCol]++
-		validateBoard(curRow, curCol, b)
-	}
+func solve(b *board) {
+	stepCount := 0
+	zeroBoard := cellFilter(b, func(val cell) bool {
+		return val.value == 0
+	})
+	for i := 0; i < len(zeroBoard); i++ {
+		stepCount++
+		//fmt.Printf("Start of loop - i is %d, stepCount is %d\n", i, stepCount)
+		if stepCount > 1000000 {
+			fmt.Printf("Starting board was\n%v", genBoard("......9.....5....85..83....35..82.....6...2....937..4.76........3.4.5.76..2......"))
+			os.Exit(42)
+		}
+		for j := 0; j < 9; j++ {
+			zeroBoard[i].value++
+			if zeroBoard[i].value == 10 {
+				//fmt.Printf("Cell %+v is invalid, going back two columns, currently at %d\n", (*b)[zeroBoard[i].x][zeroBoard[i].y], i)
+				zeroBoard[i].value = 0
+				i -= 2
+				//fmt.Printf("Current board is now\n%v", b)
+				break
+			}
 
-}*/
+			if !validateBoard(zeroBoard[i].x, zeroBoard[i].y, b) {
+				//fmt.Printf("Cell %+v is invalid, going back a column to increment value, i is currently %d, j is currently at %d\n", (*b)[zeroBoard[i].x][zeroBoard[i].y], i, j)
+				j--
+				continue
+			}
+			//fmt.Println(b)
+			break // Have valid value, break out of incrementing loop
+		}
+		//fmt.Printf("Incrementing row, i is %v\n", i)
+	}
+	fmt.Printf("Finished after %d steps\n", stepCount)
+}
+
+func cellFilter(b *board, f func(cell) bool) []*cell {
+	line := []*cell{}
+	for i := range *b {
+		for j := range (*b)[i] {
+			if f((*b)[i][j]) {
+				//fmt.Printf("Adding %v to the lineFilter", (*b)[i][j])
+				line = append(line, &(*b)[i][j])
+			}
+		}
+	}
+	return line
+}
 
 func lineFilter(b *board, f func(cell) bool) []int {
 	line := []int{}
 	for i := range *b {
 		for j := range (*b)[i] {
 			if f((*b)[i][j]) {
-				fmt.Println(fmt.Sprintf("Adding %v to the lineFilter", (*b)[i][j]))
+				//fmt.Printf("Adding %v to the lineFilter", (*b)[i][j])
 				line = append(line, (*b)[i][j].value)
 			}
 		}
@@ -178,5 +195,9 @@ func lineFilter(b *board, f func(cell) bool) []int {
 func main() {
 	b := genBoard("......9.....5....85..83....35..82.....6...2....937..4.76........3.4.5.76..2......")
 	fmt.Println(b)
-	fmt.Println(validateBoard(0, 0, &b))
+	start := time.Now()
+	solve(&b)
+	elapsed := time.Since(start)
+	fmt.Printf("It took %v to run\n", elapsed)
+	fmt.Println(b)
 }
