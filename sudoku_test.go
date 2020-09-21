@@ -1,6 +1,15 @@
 package main
 
-import "testing"
+import (
+	"log"
+	"strconv"
+	"strings"
+	"testing"
+
+	"github.com/leanovate/gopter"
+	"github.com/leanovate/gopter/gen"
+	"github.com/leanovate/gopter/prop"
+)
 
 func TestChkLine(t *testing.T) {
 	// TODO - set up a completed board to test for success, edit to test failures
@@ -23,14 +32,77 @@ func TestValidateBoard(t *testing.T) {
 	// Gen a fully random board, check values match and row/column/box is expected
 }
 
-func TestGenBoard(t *testing.T) {
-	b := genBoard("......9.....5....85..83....35..82.....6...2....937..4.76........3.4.5.76..2......")
+func findBox(x, y int) int {
+	switch x {
+	case 0, 1, 2:
+		switch y {
+		case 0, 1, 2:
+			return 1
+		case 3, 4, 5:
+			return 2
+		case 6, 7, 8:
+			return 3
+		}
+	case 3, 4, 5:
+		switch y {
+		case 0, 1, 2:
+			return 4
+		case 3, 4, 5:
+			return 5
+		case 6, 7, 8:
+			return 6
+		}
+	case 6, 7, 8:
+		switch y {
+		case 0, 1, 2:
+			return 7
+		case 3, 4, 5:
+			return 8
+		case 6, 7, 8:
+			return 9
+		}
+	}
+	return 0
+}
 
-	if b[0][6].value != 9 {
-		t.Errorf("Board did not generate correctly, expected 9 at line 0 column 6, got %d", b[0][6].value)
-	}
-	if b[0][6].box != 3 {
-		t.Errorf("Board did not generate correctly, expected line 0 colunn 6 to be in box 3, actually %d", b[0][6].box)
-	}
+func TestGenBoard(t *testing.T) {
+
+	properties := gopter.NewProperties(nil)
+
+	properties.Property("should generate boards correctly", prop.ForAll(
+		func(puzzle string) bool {
+			b := genBoard(puzzle)
+			stringCount := 0
+			spl := strings.Split(puzzle, "")
+			for row := 0; row < 9; row++ {
+				for col := 0; col < 9; col++ {
+					var val int
+					if spl[stringCount] == "." {
+						val = 0
+					} else {
+						var err error
+						val, err = strconv.Atoi(spl[stringCount])
+						if err != nil {
+							log.Fatal(err)
+						}
+					}
+
+					if !(b[row][col].x == row &&
+						b[row][col].y == col &&
+						b[row][col].value == val &&
+						b[row][col].box == findBox(row, col)) {
+						log.Fatalf("Cell %d %d from \n%vshould have x == %d, y == %d, box == %d, and value == %d, but actually was\n%+v\n",
+							row, col, b, row, col, val, findBox(row, col), b[row][col])
+						return false
+					}
+					stringCount++
+				}
+			}
+			return true
+
+		},
+		gen.RegexMatch(`[0-9\.]{81}`),
+	))
+	properties.TestingRun(t)
 
 }
