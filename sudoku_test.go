@@ -18,3 +18,19 @@ func TestChkLine(t *testing.T) {
 		t.Errorf("Row %d didn't pass as a valid row when it should", zeroRow[0])
 	}
 }
+
+func TestValidateBoard(t *testing.T) {
+	// Gen a fully random board, check values match and row/column/box is expected
+}
+
+func TestGenBoard(t *testing.T) {
+	b := genBoard("......9.....5....85..83....35..82.....6...2....937..4.76........3.4.5.76..2......")
+
+	if b[0][6].value != 9 {
+		t.Errorf("Board did not generate correctly, expected 9 at line 0 column 6, got %d", b[0][6].value)
+	}
+	if b[0][6].box != 3 {
+		t.Errorf("Board did not generate correctly, expected line 0 colunn 6 to be in box 3, actually %d", b[0][6].box)
+	}
+
+}
