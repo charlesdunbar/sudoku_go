@@ -20,11 +20,6 @@ func (b board) String() string {
 	r := ""
 	for i := range b {
 		for j := range b[i] {
-			/*if b[i][j] == 0 {
-				r += " "
-			} else {
-				r += fmt.Sprintf("%d ", b[i][j])
-			}*/
 			r += fmt.Sprintf("%d ", b[i][j].value)
 		}
 		r += "\n"
@@ -87,19 +82,16 @@ func chkLine(x []int) bool {
 
 func validateBoard(x, y int, b *board) bool {
 	// TODO - These can be concurrent
-	//fmt.Println("***Generating Row Filter***")
 	genRow := lineFilter(b, func(val cell) bool {
 		return val.x == x
 	})
 	row := chkLine(genRow)
 
-	//fmt.Println("***Generating Column Filter***")
 	genCol := lineFilter(b, func(val cell) bool {
 		return val.y == y
 	})
 	col := chkLine(genCol)
 
-	//fmt.Println("***Generating Box Filter***")
 	genBox := lineFilter(b, func(val cell) bool {
 		return val.box == (*b)[x][y].box
 	})
@@ -118,7 +110,6 @@ func solve(b *board) {
 		if stepCount%1000 == 0 {
 			fmt.Printf("Current step: %d\n\n%v", stepCount, b)
 		}
-		//fmt.Printf("Start of loop - i is %d, stepCount is %d\n", i, stepCount)
 		if stepCount > 1000000 {
 			fmt.Printf("Took too long")
 			os.Exit(42)
@@ -126,22 +117,17 @@ func solve(b *board) {
 		for j := 0; j < 9; j++ {
 			zeroBoard[i].value++
 			if zeroBoard[i].value == 10 {
-				//fmt.Printf("Cell %+v is invalid, going back two columns, currently at %d\n", (*b)[zeroBoard[i].x][zeroBoard[i].y], i)
 				zeroBoard[i].value = 0
-				i -= 2
-				//fmt.Printf("Current board is now\n%v", b)
+				i -= 2 // Go back 2 spaces to increment previous cell by one and try this cell 1-9 again
 				break
 			}
 
 			if !validateBoard(zeroBoard[i].x, zeroBoard[i].y, b) {
-				//fmt.Printf("Cell %+v is invalid, going back a column to increment value, i is currently %d, j is currently at %d\n", (*b)[zeroBoard[i].x][zeroBoard[i].y], i, j)
 				j--
 				continue
 			}
-			//fmt.Println(b)
 			break // Have valid value, break out of incrementing loop
 		}
-		//fmt.Printf("Incrementing row, i is %v\n", i)
 	}
 	fmt.Printf("Finished after %d steps\n", stepCount)
 }
@@ -171,14 +157,11 @@ func lineFilter(b *board, f func(cell) bool) []int {
 }
 
 func main() {
-	//rand.Seed(1)
 	rand.Seed(time.Now().UTC().UnixNano())
 	p := loadCsv("./puzzles.csv")
 	puzzle := rand.Intn(len(p))
 	b := genBoard(p[puzzle])
 	fmt.Printf("Solving puzzle number %d from file:\n\n%v\n", puzzle+2, b)
-	//b := genBoard("......9.....5....85..83....35..82.....6...2....937..4.76........3.4.5.76..2......")
-	//fmt.Println(p)
 	start := time.Now()
 	solve(&b)
 	elapsed := time.Since(start)
