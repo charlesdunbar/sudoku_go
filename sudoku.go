@@ -111,10 +111,10 @@ func solve(b *board) {
 			fmt.Printf("Current step: %d\n\n%v", stepCount, b)
 		}
 		if stepCount > 1000000 {
-			fmt.Printf("Took too long")
+			fmt.Println("Took too long")
 			os.Exit(42)
 		}
-		for j := 0; j < 9; j++ {
+		for j := 0; j < 10; j++ {
 			zeroBoard[i].value++
 			if zeroBoard[i].value == 10 {
 				zeroBoard[i].value = 0
@@ -122,11 +122,9 @@ func solve(b *board) {
 				break
 			}
 
-			if !validateBoard(zeroBoard[i].x, zeroBoard[i].y, b) {
-				j--
-				continue
+			if validateBoard(zeroBoard[i].x, zeroBoard[i].y, b) {
+				break
 			}
-			break // Have valid value, break out of incrementing loop
 		}
 	}
 	fmt.Printf("Finished after %d steps\n", stepCount)
@@ -165,6 +163,6 @@ func main() {
 	start := time.Now()
 	solve(&b)
 	elapsed := time.Since(start)
-	fmt.Printf("It took %v to run\n\n", elapsed)
+	fmt.Printf("Puzzle %d took %v to run\n\n", puzzle+2, elapsed)
 	fmt.Println(b)
 }
