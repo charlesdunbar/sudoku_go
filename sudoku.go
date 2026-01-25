@@ -158,7 +158,7 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 	p := loadCsv("./puzzles.csv")
 	puzzle := rand.Intn(len(p))
-	b := genBoard(p[puzzle])
+	b := genBoard(p[16])
 	fmt.Printf("Solving puzzle number %d from file:\n\n%v\n", puzzle+2, b)
 	start := time.Now()
 	solve(&b)
